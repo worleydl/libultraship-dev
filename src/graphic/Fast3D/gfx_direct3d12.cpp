@@ -27,7 +27,7 @@
 #ifndef _LANGUAGE_C
 #define _LANGUAGE_C
 #endif
-#include <libultra/gbi.h>
+#include <libultraship/libultra/gbi.h>
 
 #define DECLARE_GFX_DXGI_FUNCTIONS
 #include "gfx_dxgi.h"

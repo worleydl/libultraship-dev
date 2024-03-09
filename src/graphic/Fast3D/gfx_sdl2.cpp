@@ -1,5 +1,7 @@
 #include <stdio.h>
 
+#include "glad/gl.h"
+
 #ifndef __SWITCH__
 #include "libultraship/libultraship.h"
 #else
@@ -8,7 +10,7 @@
 #include "libultraship/classes.h"
 #endif
 
-#if defined(ENABLE_OPENGL) || defined(__APPLE__)
+#if defined(ENABLE_OPENGL) || defined(__APPLE__) || true
 
 #ifdef __MINGW32__
 #define FOR_WINDOWS 1
@@ -16,8 +18,8 @@
 #define FOR_WINDOWS 0
 #endif
 
-#if FOR_WINDOWS
-#include <GL/glew.h>
+#if FOR_WINDOWS or true
+#include <glad/gl.h>
 #include "SDL.h"
 #define GL_GLEXT_PROTOTYPES 1
 #include "SDL_opengl.h"
@@ -317,7 +319,7 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
 #if defined(__APPLE__)
     bool use_opengl = strcmp(gfx_api_name, "OpenGL") == 0;
 #else
-    bool use_opengl = true;
+    bool use_opengl = false;
 #endif
 
     if (use_opengl) {
@@ -337,6 +339,10 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+#else
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
 #endif
 
 #ifdef _WIN32
@@ -367,7 +373,7 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
     }
 
     wnd = SDL_CreateWindow(title, posX, posY, window_width, window_height, flags);
-#ifdef _WIN32
+#if _WIN32
     // Get Windows window handle and use it to subclass the window procedure.
     // Needed to circumvent SDLs DPI scaling problems under windows (original does only scale *sometimes*).
     SDL_SysWMinfo wmInfo;
@@ -385,6 +391,7 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
     }
 
     if (use_opengl) {
+        
 #ifndef __SWITCH__
         SDL_GL_GetDrawableSize(wnd, &window_width, &window_height);
 
@@ -394,6 +401,7 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
 #endif
 
         ctx = SDL_GL_CreateContext(wnd);
+        
 
 #ifdef __SWITCH__
         if (!gladLoadGLLoader(SDL_GL_GetProcAddress)) {
@@ -420,7 +428,7 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
         window_impl.Metal = { wnd, renderer };
     }
 
-    LUS::Context::GetInstance()->GetWindow()->GetGui()->Init(window_impl);
+    //LUS::Context::GetInstance()->GetWindow()->GetGui()->Init(window_impl);
 
     for (size_t i = 0; i < sizeof(lus_to_sdl_table) / sizeof(SDL_Scancode); i++) {
         sdl_to_lus_table[lus_to_sdl_table[i]] = i;

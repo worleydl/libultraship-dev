@@ -1,6 +1,6 @@
 #pragma once
 
-#undef _DLL
+//#undef _DLL
 
 #include <string>
 #include <stdint.h>

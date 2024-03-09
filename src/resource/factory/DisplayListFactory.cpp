@@ -392,6 +392,7 @@ std::shared_ptr<IResource> ResourceFactoryXMLDisplayListV0::ReadResource(std::sh
 
             char* filePath = (char*)malloc(fName.size() + 1);
             strcpy(filePath, fName.data());
+            free(filePath);
 
             g = GsSpVertexOtR2P1(filePath);
 
@@ -950,6 +951,7 @@ std::shared_ptr<IResource> ResourceFactoryXMLDisplayListV0::ReadResource(std::sh
                 strcpy(dlPath2, dlPath.c_str());
 
                 g = gsSPBranchListOTRFilePath(dlPath2);
+                free(dlPath2);
             }
         } else if (childName == "CallDisplayList") {
             std::string dlPath = (char*)child->Attribute("Path");
@@ -961,6 +963,7 @@ std::shared_ptr<IResource> ResourceFactoryXMLDisplayListV0::ReadResource(std::sh
                 strcpy(dlPath2, dlPath.c_str());
 
                 g = gsSPDisplayListOTRFilePath(dlPath2);
+                free(dlPath2);
             }
         } else if (childName == "ClearGeometryMode" || childName == "SetGeometryMode") {
             uint64_t clearData = 0;

@@ -68,8 +68,8 @@ void Window::Init() {
     androidGameMode = true;
 #endif
 
-    mIsFullscreen = LUS::Context::GetInstance()->GetConfig()->GetBool("Window.Fullscreen.Enabled", false) ||
-                    steamDeckGameMode || androidGameMode;
+    mIsFullscreen = true; //LUS::Context::GetInstance()->GetConfig()->GetBool("Window.Fullscreen.Enabled", false) ||
+                    //steamDeckGameMode || androidGameMode;
     mPosX = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.PositionX", mPosX);
     mPosY = LUS::Context::GetInstance()->GetConfig()->GetInt("Window.PositionY", mPosY);
 
@@ -229,6 +229,7 @@ void Window::InitWindowManager() {
         case WindowBackend::DX11:
             mRenderingApi = &gfx_direct3d11_api;
             mWindowManagerApi = &gfx_dxgi_api;
+            mWindowManagerApi = &gfx_sdl;
             break;
 #endif
 #ifdef ENABLE_DX12
