@@ -23,6 +23,8 @@
 FMT_BEGIN_NAMESPACE
 
 // Enable tzset.
+#define FMT_USE_TZSET 0
+/*
 #ifndef FMT_USE_TZSET
 // UWP doesn't provide _tzset.
 #  if FMT_HAS_INCLUDE("winapifamily.h")
@@ -35,6 +37,7 @@ FMT_BEGIN_NAMESPACE
 #    define FMT_USE_TZSET 0
 #  endif
 #endif
+*/
 
 // Enable safe chrono durations, unless explicitly disabled.
 #ifndef FMT_SAFE_DURATION_CAST

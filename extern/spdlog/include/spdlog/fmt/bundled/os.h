@@ -19,6 +19,8 @@
 
 #include "format.h"
 
+#define FMT_USE_FCNTL 0
+/*
 #ifndef FMT_USE_FCNTL
 // UWP doesn't provide _pipe.
 #  if FMT_HAS_INCLUDE("winapifamily.h")
@@ -34,6 +36,7 @@
 #    define FMT_USE_FCNTL 0
 #  endif
 #endif
+*/
 
 #ifndef FMT_POSIX
 #  if defined(_WIN32) && !defined(__MINGW32__)

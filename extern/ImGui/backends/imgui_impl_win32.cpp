@@ -23,6 +23,8 @@
 #include <tchar.h>
 #include <dwmapi.h>
 
+#include "../../../libultraship/src/graphic/Fast3D/wininfo.h"
+
 // Configuration flags to add in your imconfig.h file:
 //#define IMGUI_IMPL_WIN32_DISABLE_GAMEPAD              // Disable gamepad support. This was meaningful before <1.81 but we now load XInput dynamically so the option is now less relevant.
 
@@ -347,7 +349,7 @@ static void ImGui_ImplWin32_UpdateGamepads()
     #define MAP_BUTTON(KEY_NO, BUTTON_ENUM)     { io.AddKeyEvent(KEY_NO, (gamepad.wButtons & BUTTON_ENUM) != 0); }
     #define MAP_ANALOG(KEY_NO, VALUE, V0, V1)   { float vn = (float)(VALUE - V0) / (float)(V1 - V0); io.AddKeyAnalogEvent(KEY_NO, vn > 0.10f, IM_SATURATE(vn)); }
     MAP_BUTTON(ImGuiKey_GamepadStart,           XINPUT_GAMEPAD_START);
-    MAP_BUTTON(ImGuiKey_GamepadBack,            XINPUT_GAMEPAD_BACK);
+    MAP_BUTTON(ImGuiKey_GamepadBack,            XINPUT_GAMEPAD_RIGHT_THUMB);
     MAP_BUTTON(ImGuiKey_GamepadFaceLeft,        XINPUT_GAMEPAD_X);
     MAP_BUTTON(ImGuiKey_GamepadFaceRight,       XINPUT_GAMEPAD_B);
     MAP_BUTTON(ImGuiKey_GamepadFaceUp,          XINPUT_GAMEPAD_Y);
@@ -887,6 +889,7 @@ static void ImGui_ImplWin32_CreateWindow(ImGuiViewport* viewport)
     ImGui_ImplWin32_ViewportData* vd = IM_NEW(ImGui_ImplWin32_ViewportData)();
     viewport->PlatformUserData = vd;
 
+    /*
     // Select style and parent window
     ImGui_ImplWin32_GetWin32StyleFromViewportFlags(viewport->Flags, &vd->DwStyle, &vd->DwExStyle);
     HWND parent_window = nullptr;
@@ -904,6 +907,12 @@ static void ImGui_ImplWin32_CreateWindow(ImGuiViewport* viewport)
     vd->HwndOwned = true;
     viewport->PlatformRequestResize = false;
     viewport->PlatformHandle = viewport->PlatformHandleRaw = vd->Hwnd;
+    */
+    viewport->PlatformRequestResize = false;
+    viewport->PlatformHandle = viewport->PlatformHandleRaw = WinInfo::getCurrentWindow();
+    vd->Hwnd = reinterpret_cast<HWND>(viewport->PlatformHandleRaw);
+    vd->HwndOwned = false;
+    vd->HwndParent = nullptr; //vd->Hwnd;
 }
 
 static void ImGui_ImplWin32_DestroyWindow(ImGuiViewport* viewport)

@@ -79,11 +79,14 @@
 #endif
 
 // disable thread local on msvc 2013
+#define SPDLOG_NO_TLS 1
+/*
 #ifndef SPDLOG_NO_TLS
 #    if (defined(_MSC_VER) && (_MSC_VER < 1900)) || defined(__cplusplus_winrt)
 #        define SPDLOG_NO_TLS 1
 #    endif
 #endif
+*/
 
 #ifndef SPDLOG_FUNCTION
 #    define SPDLOG_FUNCTION static_cast<const char *>(__FUNCTION__)

@@ -16,13 +16,14 @@
 #ifdef __MINGW32__
 #define FOR_WINDOWS 1
 #else
-#define FOR_WINDOWS 0
+#define FOR_WINDOWS 1
 #endif
 
 #ifdef _MSC_VER
 #include <SDL2/SDL.h>
-// #define GL_GLEXT_PROTOTYPES 1
-#include <GL/glew.h>
+#include <glad/gl.h>
+#define GL_GLEXT_PROTOTYPES 1
+#include "SDL_opengl.h"
 #elif FOR_WINDOWS
 #include <GL/glew.h>
 #include "SDL.h"
@@ -833,7 +834,7 @@ static void gfx_opengl_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_
 
 static void gfx_opengl_init(void) {
 #ifndef __SWITCH__
-    glewInit();
+    gladLoadGL((GLADloadfunc)SDL_GL_GetProcAddress);
 #endif
 
     glGenBuffers(1, &opengl_vbo);

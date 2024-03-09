@@ -10,7 +10,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
-	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 endif()
 
 include(cmake/Utils.cmake)
@@ -18,8 +18,8 @@ include(cmake/Utils.cmake)
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows" AND USE_AUTO_VCPKG)
     include(cmake/automate-vcpkg.cmake)
 
-    set(VCPKG_TRIPLET x64-windows-static)
-    set(VCPKG_TARGET_TRIPLET x64-windows-static)
+    set(VCPKG_TRIPLET x64-windows)
+    set(VCPKG_TARGET_TRIPLET x64-windows)
 
     vcpkg_bootstrap()
     vcpkg_install_packages(zlib bzip2 sdl2 glew)

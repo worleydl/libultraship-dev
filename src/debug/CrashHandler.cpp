@@ -4,13 +4,13 @@
 #include "Context.h"
 
 #ifdef _WIN32
-#include <windows.h>
-#include <DbgHelp.h>
+//#include <windows.h>
+//#include <DbgHelp.h>
 
-#include <inttypes.h>
-#include <excpt.h>
+//#include <inttypes.h>
+//#include <excpt.h>
 
-#pragma comment(lib, "Dbghelp.lib")
+//#pragma comment(lib, "Dbghelp.lib")
 #endif
 
 namespace LUS {
@@ -297,6 +297,7 @@ void CrashHandler::PrintRegisters(CONTEXT* ctx) {
 }
 
 void CrashHandler::PrintStack(CONTEXT* ctx) {
+#if false
     BOOL result;
     HANDLE process;
     HANDLE thread;
@@ -387,6 +388,7 @@ void CrashHandler::PrintStack(CONTEXT* ctx) {
     PrintCommon();
     LUS::Context::GetInstance()->GetLogger()->flush();
     spdlog::shutdown();
+#endif
 }
 
 extern "C" LONG seh_filter(struct _EXCEPTION_POINTERS* ex) {

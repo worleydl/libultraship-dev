@@ -54,16 +54,16 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 	if("${CMAKE_VS_PLATFORM_NAME}" MATCHES "x64")
 		string(CONCAT "MSVC_RUNTIME_LIBRARY_STR"
 			$<$<CONFIG:Debug>:
-				MultiThreadedDebug
+				MultiThreadedDebugDLL
 			>
 			$<$<CONFIG:Release>:
-				MultiThreaded
+				MultiThreadedDLL
 			>
 			$<$<NOT:$<OR:$<CONFIG:Debug>,$<CONFIG:Release>>>:${MSVC_RUNTIME_LIBRARY_DEFAULT}>
 		)
 	elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "Win32")
 		string(CONCAT "MSVC_RUNTIME_LIBRARY_STR"
-			MultiThreaded
+			MultiThreadedDLL
 		)
 	endif()
 	set_target_properties(${PROJECT_NAME} PROPERTIES MSVC_RUNTIME_LIBRARY ${MSVC_RUNTIME_LIBRARY_STR})

@@ -76,6 +76,8 @@ Gui::~Gui() {
 }
 
 void Gui::Init(GuiWindowInitData windowImpl) {
+    SDL_Init(SDL_INIT_VIDEO);
+
     mImpl = windowImpl;
     ImGuiContext* ctx = ImGui::CreateContext();
     ImGui::SetCurrentContext(ctx);
@@ -154,7 +156,7 @@ void Gui::ImGuiWMInit() {
         case WindowBackend::SDL_OPENGL:
             SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
             SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
-            ImGui_ImplSDL2_InitForOpenGL(static_cast<SDL_Window*>(mImpl.Opengl.Window), mImpl.Opengl.Context);
+            //ImGui_ImplSDL2_InitForOpenGL(static_cast<SDL_Window*>(mImpl.Opengl.Window), mImpl.Opengl.Context);
             break;
 #endif
 #if __APPLE__
@@ -185,7 +187,7 @@ void Gui::ImGuiBackendInit() {
 #ifdef __APPLE__
             ImGui_ImplOpenGL3_Init("#version 410 core");
 #else
-            ImGui_ImplOpenGL3_Init("#version 120");
+            //ImGui_ImplOpenGL3_Init("#version 120");
 #endif
             break;
 #endif
@@ -233,6 +235,7 @@ void Gui::LoadTexture(const std::string& name, const std::string& path) {
 }
 
 bool Gui::SupportsViewports() {
+    return false;
 #ifdef __SWITCH__
     return false;
 #endif
@@ -262,7 +265,7 @@ void Gui::Update(WindowEvent event) {
 #else
         case WindowBackend::SDL_OPENGL:
         case WindowBackend::SDL_METAL:
-            ImGui_ImplSDL2_ProcessEvent(static_cast<const SDL_Event*>(event.Sdl.Event));
+            //ImGui_ImplSDL2_ProcessEvent(static_cast<const SDL_Event*>(event.Sdl.Event));
 
 #ifdef __SWITCH__
             LUS::Switch::ImGuiProcessEvent(mImGuiIo->WantTextInput);
@@ -324,6 +327,7 @@ void Gui::DrawMenu() {
     ImGui::DockSpace(dockId, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None | ImGuiDockNodeFlags_NoDockingInCentralNode);
 
     if (ImGui::IsKeyPressed(TOGGLE_BTN) || (ImGui::IsKeyPressed(TOGGLE_PAD_BTN) && CVarGetInteger("gControlNav", 0))) {
+        SPDLOG_WARN("Menu toggled");
         GetMenuBar()->ToggleVisibility();
         if (wnd->IsFullscreen()) {
             Context::GetInstance()->GetWindow()->SetCursorVisibility(GetMenuBar() && GetMenuBar()->IsVisible());
@@ -425,7 +429,8 @@ void Gui::ImGuiBackendNewFrame() {
             break;
 #else
         case WindowBackend::SDL_OPENGL:
-            ImGui_ImplOpenGL3_NewFrame();
+            //ImGui_ImplOpenGL3_NewFrame();
+#define GL_GLEXT_PROTOTYPES 1
             break;
 #endif
 #ifdef __APPLE__
@@ -451,7 +456,7 @@ void Gui::ImGuiWMNewFrame() {
 #else
         case WindowBackend::SDL_OPENGL:
         case WindowBackend::SDL_METAL:
-            ImGui_ImplSDL2_NewFrame();
+            //ImGui_ImplSDL2_NewFrame();
             break;
 #endif
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
@@ -667,7 +672,7 @@ void Gui::ImGuiRenderDrawData(ImDrawData* data) {
             break;
 #else
         case WindowBackend::SDL_OPENGL:
-            ImGui_ImplOpenGL3_RenderDrawData(data);
+            //ImGui_ImplOpenGL3_RenderDrawData(data);
             break;
 #endif
 #ifdef __APPLE__

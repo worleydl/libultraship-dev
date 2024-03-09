@@ -585,7 +585,7 @@ SPDLOG_INLINE filename_t dir_name(const filename_t &path)
 
 std::string SPDLOG_INLINE getenv(const char *field)
 {
-
+    return std::string{}; // UWP hack
 #if defined(_MSC_VER)
 #    if defined(__cplusplus_winrt)
     return std::string{}; // not supported under uwp

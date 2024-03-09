@@ -32,6 +32,8 @@
 #define DECLARE_GFX_DXGI_FUNCTIONS
 #include "gfx_dxgi.h"
 
+#include "wininfo.h"
+
 #define WINCLASS_NAME L"N64GAME"
 #define GFX_BACKEND_NAME "DXGI"
 
@@ -232,6 +234,10 @@ bool GetMonitorAtCoords(std::vector<std::tuple<HMONITOR, RECT, BOOL>> MonitorLis
 }
 
 static void toggle_borderless_window_full_screen(bool enable, bool call_callback) {
+    // TODO: preproc
+    if (true)
+        return;
+
     // Windows 7 + flip mode + waitable object can't go to exclusive fullscreen,
     // so do borderless instead. If DWM is enabled, this means we get one monitor
     // sync interval of latency extra. On Win 10 however (maybe Win 8 too), due to
@@ -450,13 +456,15 @@ void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_i
         dxgi.timer = CreateWaitableTimer(nullptr, FALSE, nullptr);
     }
 
+// TODO: preproc defs
+// No window for uwp
     // Prepare window title
-
     char title[512];
     wchar_t w_title[512];
     int len = sprintf(title, "%s (%s)", game_name, gfx_api_name);
     mbstowcs(w_title, title, len + 1);
     dxgi.game_name = game_name;
+/*
 
     // Create window
     WNDCLASSEXW wcex;
@@ -500,6 +508,15 @@ void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_i
 
     ShowWindow(dxgi.h_wnd, SW_SHOW);
     UpdateWindow(dxgi.h_wnd);
+*/
+    dxgi.current_height = 1080;
+    dxgi.current_width = 1920;
+    dxgi.monitor_list = GetMonitorList();
+    dxgi.posX = 0;
+    dxgi.posY = 0;
+    dxgi.h_wnd = reinterpret_cast<HWND>( WinInfo::getCurrentWindow() );
+    load_dxgi_library();
+    //UpdateWindow(dxgi.h_wnd);
 
     // Get refresh rate
     GetMonitorHzPeriod(dxgi.h_Monitor, dxgi.detected_hz, dxgi.display_period);
@@ -508,7 +525,7 @@ void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_i
         toggle_borderless_window_full_screen(true, false);
     }
 
-    DragAcceptFiles(dxgi.h_wnd, TRUE);
+    //DragAcceptFiles(dxgi.h_wnd, TRUE);
 }
 
 static void gfx_dxgi_close() {
@@ -915,6 +932,7 @@ void gfx_dxgi_create_swap_chain(IUnknown* device, std::function<void()>&& before
     }
     swap_chain_desc.SampleDesc.Count = 1;
 
+    /*
     run_as_dpi_aware([&]() {
         // When setting size for the buffers, the values that DXGI puts into the desc (that can later be retrieved by
         // GetDesc1) have been divided by the current scaling factor. By making this call dpi aware, no division will be
@@ -923,7 +941,15 @@ void gfx_dxgi_create_swap_chain(IUnknown* device, std::function<void()>&& before
         ThrowIfFailed(dxgi.factory->CreateSwapChainForHwnd(device, dxgi.h_wnd, &swap_chain_desc, nullptr, nullptr,
                                                            &dxgi.swap_chain));
     });
+// TODO: Needs proper preprocessor definition
+    ThrowIfFailed(
+        dxgi.factory->CreateSwapChainForHwnd(device, dxgi.h_wnd, &swap_chain_desc, nullptr, nullptr, &dxgi.swap_chain));
     ThrowIfFailed(dxgi.factory->MakeWindowAssociation(dxgi.h_wnd, DXGI_MWA_NO_ALT_ENTER));
+    */
+
+    ThrowIfFailed(dxgi.factory->CreateSwapChainForCoreWindow(device, static_cast<::IUnknown*>(WinInfo::getCurrentWindow()), &swap_chain_desc,
+                                                             nullptr, &dxgi.swap_chain)
+    );
 
     apply_maximum_frame_latency(true);
 
@@ -959,7 +985,7 @@ void ThrowIfFailed(HRESULT res, HWND h_wnd, const char* message) {
 
 const char* gfx_dxgi_get_key_name(int scancode) {
     static char text[64];
-    GetKeyNameTextA(scancode << 16, text, 64);
+    //GetKeyNameTextA(scancode << 16, text, 64);
     return text;
 }
 
