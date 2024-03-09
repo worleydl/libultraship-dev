@@ -229,7 +229,6 @@ void Window::InitWindowManager() {
         case WindowBackend::DX11:
             mRenderingApi = &gfx_direct3d11_api;
             mWindowManagerApi = &gfx_dxgi_api;
-            mWindowManagerApi = &gfx_sdl;
             break;
 #endif
 #ifdef ENABLE_DX12
