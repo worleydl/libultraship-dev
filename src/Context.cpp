@@ -140,7 +140,7 @@ void Context::InitLogging() {
         */
 #endif
         auto systemConsoleSink = std::make_shared<spdlog::sinks::msvc_sink_mt>();
-        systemConsoleSink->set_level(spdlog::level::trace);
+        systemConsoleSink->set_level(spdlog::level::debug);
         sinks.push_back(systemConsoleSink);
 #endif
 

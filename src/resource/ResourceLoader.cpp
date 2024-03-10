@@ -86,7 +86,7 @@ std::shared_ptr<ResourceFactory> ResourceLoader::GetFactory(uint32_t format, std
 
 std::shared_ptr<IResource> ResourceLoader::LoadResource(std::shared_ptr<File> fileToLoad) {
     if (fileToLoad == nullptr) {
-        SPDLOG_ERROR("Failed to load resource: File not loaded");
+        //SPDLOG_ERROR("Failed to load resource: File not loaded");
         return nullptr;
     }
 
