@@ -15,6 +15,7 @@
 #include <dxgi1_5.h>
 #include <versionhelpers.h>
 #include <d3d11.h>
+#include <d3d12.h>
 
 #include <shellscalingapi.h>
 
@@ -763,6 +764,7 @@ static bool gfx_dxgi_start_frame(void) {
 }
 
 static void gfx_dxgi_swap_buffers_begin(void) {
+    /*
     LARGE_INTEGER t;
     dxgi.use_timer = true;
     if (dxgi.use_timer || (dxgi.tearing_support && !dxgi.is_vsync_enabled)) {
@@ -783,7 +785,13 @@ static void gfx_dxgi_swap_buffers_begin(void) {
         int64_t next = qpc_to_100ns(dxgi.previous_present_time.QuadPart) +
                        FRAME_INTERVAL_NS_NUMERATOR / (FRAME_INTERVAL_NS_DENOMINATOR * 100);
         int64_t left = next - qpc_to_100ns(t.QuadPart) - 15000UL;
+
         if (left > 0) {
+            // Protection for qpc shift
+            if (left > 20000) {
+                left = 16666;
+            }
+
             LARGE_INTEGER li;
             li.QuadPart = -left;
             SetWaitableTimer(dxgi.timer, &li, 0, nullptr, nullptr, false);
@@ -793,6 +801,12 @@ static void gfx_dxgi_swap_buffers_begin(void) {
                 YieldProcessor();
                 QueryPerformanceCounter(&t);
                 t.QuadPart = qpc_to_100ns(t.QuadPart);
+
+                // Protection for xbox and other platforms where output from qpc can shift
+                if ((t.QuadPart + 15000UL) < next) {
+                    //dxgi.qpc_init = t.QuadPart;
+                    break;
+                }
             } while (t.QuadPart < next);
         }
     }
@@ -810,9 +824,16 @@ static void gfx_dxgi_swap_buffers_begin(void) {
         dxgi.pending_frame_stats.insert(std::make_pair(this_present_id, dxgi.length_in_vsync_frames));
     }
     dxgi.dropped_frame = false;
+    */
+    LARGE_INTEGER t;
+    QueryPerformanceCounter(&t);
+    dxgi.previous_present_time = t;
+    dxgi.dropped_frame = false;
+    dxgi.swap_chain->Present(1, 0);
 }
 
 static void gfx_dxgi_swap_buffers_end(void) {
+    /*
     LARGE_INTEGER t0, t1, t2;
     QueryPerformanceCounter(&t0);
     QueryPerformanceCounter(&t1);
@@ -844,17 +865,19 @@ static void gfx_dxgi_swap_buffers_end(void) {
         // else TODO: maybe sleep until some estimated time the frame will be shown to reduce lag
     }
 
-    DXGI_FRAME_STATISTICS stats;
-    dxgi.swap_chain->GetFrameStatistics(&stats);
+        QueryPerformanceCounter(&t2);
 
-    QueryPerformanceCounter(&t2);
-
-    dxgi.zero_latency = dxgi.pending_frame_stats.rbegin()->first == stats.PresentCount;
+    //dxgi.zero_latency = dxgi.pending_frame_stats.rbegin()->first == stats.PresentCount;
 
     // printf(L"done %I64u gpu:%d wait:%d freed:%I64u frame:%u %u monitor:%u t:%I64u\n", (unsigned long
     // long)(t0.QuadPart - dxgi.qpc_init), (int)(t1.QuadPart - t0.QuadPart), (int)(t2.QuadPart - t0.QuadPart), (unsigned
     // long long)(t2.QuadPart - dxgi.qpc_init), dxgi.pending_frame_stats.rbegin()->first, stats.PresentCount,
     // stats.SyncRefreshCount, (unsigned long long)(stats.SyncQPCTime.QuadPart - dxgi.qpc_init));
+    */
+    DXGI_FRAME_STATISTICS stats;
+    dxgi.swap_chain->GetFrameStatistics(&stats);
+
+
 }
 
 static double gfx_dxgi_get_time(void) {
@@ -918,8 +941,8 @@ void gfx_dxgi_create_swap_chain(IUnknown* device, std::function<void()>&& before
 
     DXGI_SWAP_CHAIN_DESC1 swap_chain_desc = {};
     swap_chain_desc.BufferCount = 3;
-    swap_chain_desc.Width = 0;
-    swap_chain_desc.Height = 0;
+    swap_chain_desc.Width = 1920;
+    swap_chain_desc.Height = 1080;
     swap_chain_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     swap_chain_desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     swap_chain_desc.Scaling = win8 ? DXGI_SCALING_NONE : DXGI_SCALING_STRETCH;
