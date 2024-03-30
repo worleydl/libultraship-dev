@@ -37,6 +37,8 @@
 #include <SDL2/SDL_opengles2.h>
 #endif
 
+#include "wininfo.h"
+
 #include "window/gui/Gui.h"
 #include "public/bridge/consolevariablebridge.h"
 
@@ -319,7 +321,7 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
 #if defined(__APPLE__)
     bool use_opengl = strcmp(gfx_api_name, "OpenGL") == 0;
 #else
-    bool use_opengl = false;
+    bool use_opengl = true;
 #endif
 
     if (use_opengl) {
@@ -428,7 +430,7 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
         window_impl.Metal = { wnd, renderer };
     }
 
-    //LUS::Context::GetInstance()->GetWindow()->GetGui()->Init(window_impl);
+    LUS::Context::GetInstance()->GetWindow()->GetGui()->Init(window_impl);
 
     for (size_t i = 0; i < sizeof(lus_to_sdl_table) / sizeof(SDL_Scancode); i++) {
         sdl_to_lus_table[lus_to_sdl_table[i]] = i;
@@ -588,6 +590,12 @@ static inline void sync_framerate_with_timer(void) {
 
     const int64_t next = previous_time + 10 * FRAME_INTERVAL_US_NUMERATOR / FRAME_INTERVAL_US_DENOMINATOR;
     int64_t left = next - t;
+
+    // QPC protection for platforms where it can shift and lock the rendering with a huge sleep value
+    if (left > 20000) {
+        left = 16666;
+    }
+
 #ifdef _WIN32
     // We want to exit a bit early, so we can busy-wait the rest to never miss the deadline
     left -= 15000UL;
@@ -609,6 +617,10 @@ static inline void sync_framerate_with_timer(void) {
     do {
         YieldProcessor(); // TODO: Find a way for other compilers, OSes and architectures
         t = qpc_to_100ns(SDL_GetPerformanceCounter());
+
+        // Escape condition for shifting QPC
+        if ((next - t) > 500000)
+            break;
     } while (t < next);
 #endif
     t = qpc_to_100ns(SDL_GetPerformanceCounter());
@@ -622,7 +634,8 @@ static inline void sync_framerate_with_timer(void) {
 }
 
 static void gfx_sdl_swap_buffers_begin(void) {
-    sync_framerate_with_timer();
+    // For xbox we just rely on vsync, qpc is too problematic
+    //sync_framerate_with_timer();
     SDL_GL_SwapWindow(wnd);
 }
 

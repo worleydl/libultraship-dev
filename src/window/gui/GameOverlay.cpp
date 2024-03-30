@@ -7,6 +7,8 @@
 #include "Context.h"
 #include <Utils/StringHelper.h>
 
+#include "../../graphic/Fast3D/wininfo.h"
+
 namespace LUS {
 GameOverlay::GameOverlay() {
 }
@@ -160,7 +162,7 @@ void GameOverlay::Draw() {
     const ImGuiViewport* viewport = ImGui::GetMainViewport();
 
     ImGui::SetNextWindowPos(viewport->Pos, ImGuiCond_Always);
-    ImGui::SetNextWindowSize(viewport->Size, ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(WinInfo::getHostWidth(), WinInfo::getHostHeight()), ImGuiCond_Always);
     ImGui::Begin("GameOverlay", nullptr,
                  ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
                      ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings |

@@ -26,6 +26,8 @@
 #include "graphic/Fast3D/gfx_gx2.h"
 #endif
 
+#include "graphic/Fast3D/wininfo.h"
+
 #ifdef __APPLE__
 #include <SDL_hints.h>
 #include <SDL_video.h>
@@ -131,7 +133,6 @@ void Gui::Init(GuiWindowInitData windowImpl) {
     mImGuiIo->DisplaySize.x = mImpl.Gx2.Width;
     mImGuiIo->DisplaySize.y = mImpl.Gx2.Height;
 #endif
-
     auto imguiIniPath = LUS::Context::GetPathRelativeToAppDirectory("imgui.ini");
     auto imguiLogPath = LUS::Context::GetPathRelativeToAppDirectory("imgui_log.txt");
     mImGuiIo->IniFilename = strcpy(new char[imguiIniPath.length() + 1], imguiIniPath.c_str());
@@ -176,7 +177,7 @@ void Gui::ImGuiWMInit() {
         case WindowBackend::SDL_OPENGL:
             SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
             SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
-            //ImGui_ImplSDL2_InitForOpenGL(static_cast<SDL_Window*>(mImpl.Opengl.Window), mImpl.Opengl.Context);
+            ImGui_ImplSDL2_InitForOpenGL(static_cast<SDL_Window*>(mImpl.Opengl.Window), mImpl.Opengl.Context);
             break;
 #endif
 #if __APPLE__
@@ -209,7 +210,7 @@ void Gui::ImGuiBackendInit() {
 #elif USE_OPENGLES
             ImGui_ImplOpenGL3_Init("#version 300 es");
 #else
-            //ImGui_ImplOpenGL3_Init("#version 120");
+            ImGui_ImplOpenGL3_Init("#version 120");
 #endif
             break;
 #endif
@@ -297,7 +298,7 @@ void Gui::Update(WindowEvent event) {
 #else
         case WindowBackend::SDL_OPENGL:
         case WindowBackend::SDL_METAL:
-            //ImGui_ImplSDL2_ProcessEvent(static_cast<const SDL_Event*>(event.Sdl.Event));
+            ImGui_ImplSDL2_ProcessEvent(static_cast<const SDL_Event*>(event.Sdl.Event));
 
 #ifdef __SWITCH__
             LUS::Switch::ImGuiProcessEvent(mImGuiIo->WantTextInput);
@@ -352,7 +353,8 @@ void Gui::DrawMenu() {
 
     const ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->WorkPos);
-    ImGui::SetNextWindowSize(ImVec2((int)wnd->GetWidth(), (int)wnd->GetHeight()));
+    // For some reason xbox pulls 1080 if you don't overide WxH here
+    ImGui::SetNextWindowSize(ImVec2(WinInfo::getHostWidth(), WinInfo::getHostHeight()));
     ImGui::SetNextWindowViewport(viewport->ID);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
@@ -433,8 +435,8 @@ void Gui::DrawMenu() {
     gfx_current_dimensions.height = (uint32_t)(size.y * gfx_current_dimensions.internal_mul);
     gfx_current_game_window_viewport.x = (int16_t)mainPos.x;
     gfx_current_game_window_viewport.y = (int16_t)mainPos.y;
-    gfx_current_game_window_viewport.width = (int16_t)size.x;
-    gfx_current_game_window_viewport.height = (int16_t)size.y;
+    gfx_current_game_window_viewport.width = (int16_t) size.x;
+    gfx_current_game_window_viewport.height = (int16_t) size.y;
 
     if (CVarGetInteger("gAdvancedResolution.Enabled", 0)) {
         ApplyResolutionChanges();
@@ -476,7 +478,7 @@ void Gui::ImGuiBackendNewFrame() {
             break;
 #else
         case WindowBackend::SDL_OPENGL:
-            //ImGui_ImplOpenGL3_NewFrame();
+            ImGui_ImplOpenGL3_NewFrame();
 #define GL_GLEXT_PROTOTYPES 1
             break;
 #endif
@@ -503,7 +505,7 @@ void Gui::ImGuiWMNewFrame() {
 #else
         case WindowBackend::SDL_OPENGL:
         case WindowBackend::SDL_METAL:
-            //ImGui_ImplSDL2_NewFrame();
+            ImGui_ImplSDL2_NewFrame();
             break;
 #endif
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
@@ -733,7 +735,7 @@ void Gui::ImGuiRenderDrawData(ImDrawData* data) {
             break;
 #else
         case WindowBackend::SDL_OPENGL:
-            //ImGui_ImplOpenGL3_RenderDrawData(data);
+            ImGui_ImplOpenGL3_RenderDrawData(data);
             break;
 #endif
 #ifdef __APPLE__
