@@ -214,7 +214,7 @@ void Config::SetAudioBackend(AudioBackend backend) {
 }
 
 WindowBackend Config::GetWindowBackend() {
-    return WindowBackend::DX11;
+    return WindowBackend::SDL_OPENGL;
 
     WindowBackend backend;
     int backendId = GetInt("Window.Backend.Id", -1);

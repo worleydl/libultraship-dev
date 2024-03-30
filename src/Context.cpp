@@ -385,6 +385,12 @@ std::string Context::LocateFileAcrossAppDirs(const std::string path, std::string
     if (std::filesystem::exists(fpath)) {
         return fpath;
     }
+    // E drive
+    fpath = "E:\\soh\\" + path;
+    if (std::filesystem::exists(fpath)) {
+        return fpath;
+    }
+
     // current dir
     return "./" + std::string(path);
 }

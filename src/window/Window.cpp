@@ -13,6 +13,7 @@
 #include "graphic/Fast3D/gfx_wiiu.h"
 #include "graphic/Fast3D/gfx_direct3d11.h"
 #include "graphic/Fast3D/gfx_direct3d12.h"
+#include "graphic/Fast3D/wininfo.h"
 #include "controller/KeyboardScancodes.h"
 #include "Context.h"
 

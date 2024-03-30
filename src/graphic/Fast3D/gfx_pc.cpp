@@ -3149,7 +3149,12 @@ void gfx_start_frame(void) {
 
     bool different_size = gfx_current_dimensions.width != gfx_current_game_window_viewport.width ||
                           gfx_current_dimensions.height != gfx_current_game_window_viewport.height;
-    if (different_size || gfx_msaa_level > 1) {
+
+
+    // Temporary xbox hack, need to always render to framebuffer
+    different_size = true;
+
+    if (different_size || gfx_msaa_level > 1) { // Temporary workaround
         game_renders_to_framebuffer = true;
         if (different_size) {
             gfx_rapi->update_framebuffer_parameters(game_framebuffer, gfx_current_dimensions.width,
