@@ -8,4 +8,5 @@ namespace WinInfo {
 
 	int getHostWidth();
     int getHostHeight();
+    double getHostRefresh();
         }
