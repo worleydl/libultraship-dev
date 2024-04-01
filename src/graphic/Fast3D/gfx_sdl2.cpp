@@ -277,11 +277,15 @@ static void set_fullscreen(bool on, bool call_callback) {
 }
 
 static void gfx_sdl_get_active_window_refresh_rate(uint32_t* refresh_rate) {
+    *refresh_rate = (int) WinInfo::getHostRefresh();
+
+    /*
     int display_in_use = SDL_GetWindowDisplayIndex(wnd);
 
     SDL_DisplayMode mode;
     SDL_GetCurrentDisplayMode(display_in_use, &mode);
     *refresh_rate = mode.refresh_rate;
+    */
 }
 
 static uint64_t previous_time;
@@ -590,6 +594,7 @@ static inline void sync_framerate_with_timer(void) {
 
     const int64_t next = previous_time + 10 * FRAME_INTERVAL_US_NUMERATOR / FRAME_INTERVAL_US_DENOMINATOR;
     int64_t left = next - t;
+    int64_t leftCopy = left;
 
     // QPC protection for platforms where it can shift and lock the rendering with a huge sleep value
     if (left > 20000) {
@@ -619,7 +624,7 @@ static inline void sync_framerate_with_timer(void) {
         t = qpc_to_100ns(SDL_GetPerformanceCounter());
 
         // Escape condition for shifting QPC
-        if ((next - t) > 500000)
+        if ((t + leftCopy) < next)
             break;
     } while (t < next);
 #endif
@@ -634,8 +639,12 @@ static inline void sync_framerate_with_timer(void) {
 }
 
 static void gfx_sdl_swap_buffers_begin(void) {
-    // For xbox we just rely on vsync, qpc is too problematic
-    //sync_framerate_with_timer();
+    if (abs(target_fps - WinInfo::getHostRefresh()) >= 1) { // Don't think we can use vsync_enabled here because it never changes
+        sync_framerate_with_timer();
+    } else {
+        previous_time = qpc_to_100ns(SDL_GetPerformanceCounter()); // Need to update this in case user switches sync back on
+    }
+
     SDL_GL_SwapWindow(wnd);
 }
 
