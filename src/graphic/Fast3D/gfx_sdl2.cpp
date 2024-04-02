@@ -550,9 +550,21 @@ static uint64_t qpc_to_100ns(uint64_t qpc) {
     return qpc / qpc_freq * 10000000 + qpc % qpc_freq * 10000000 / qpc_freq;
 }
 
+// I don't fully grok the QPC issues on UWP, supposedly negative values can come back and other times there's just large drift
+// The code below won't work in 2038. If nobody has changed it by then just subtract a large arbitray value from the epoch :D
+static inline uint64_t safe_counter() {
+    int64_t count = 0;
+    do {
+        count = SDL_GetPerformanceCounter();
+    } while (count < 0);
+
+    return (uint64_t)count;
+
+}
+
 static inline void sync_framerate_with_timer(void) {
     uint64_t t;
-    t = qpc_to_100ns(SDL_GetPerformanceCounter());
+    t = qpc_to_100ns(safe_counter());
 
     const int64_t next = previous_time + 10 * FRAME_INTERVAL_US_NUMERATOR / FRAME_INTERVAL_US_DENOMINATOR;
     int64_t left = next - t;
@@ -583,14 +595,15 @@ static inline void sync_framerate_with_timer(void) {
 #ifdef _WIN32
     do {
         YieldProcessor(); // TODO: Find a way for other compilers, OSes and architectures
-        t = qpc_to_100ns(SDL_GetPerformanceCounter());
+        t = qpc_to_100ns(safe_counter());
 
-        // Escape condition for shifting QPC
-        if ((t + leftCopy) < next)
+        // Escape conditions for shifting QPC
+        if (next - t > leftCopy || t < previous_time)
             break;
     } while (t < next);
 #endif
-    t = qpc_to_100ns(SDL_GetPerformanceCounter());
+    t = qpc_to_100ns(safe_counter());
+
     if (left > 0 && t - next < 10000) {
         // In case it takes some time for the application to wake up after sleep,
         // or inaccurate timer,
@@ -604,7 +617,7 @@ static void gfx_sdl_swap_buffers_begin(void) {
     if (abs(target_fps - WinInfo::getHostRefresh()) >= 1) { // Don't think we can use vsync_enabled here because it never changes
         sync_framerate_with_timer();
     } else {
-        previous_time = qpc_to_100ns(SDL_GetPerformanceCounter()); // Need to update this in case user switches sync back on
+        previous_time = qpc_to_100ns(safe_counter()); // Need to update this in case user switches sync back on
     }
 
     SDL_GL_SwapWindow(wnd);
