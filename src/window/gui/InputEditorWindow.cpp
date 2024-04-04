@@ -18,6 +18,7 @@ void InputEditorWindow::InitElement() {
     mCurrentPort = 0;
     mBtnReading = -1;
     mGameInputBlockTimer = INT32_MAX;
+    mSelectDelayTimer = 0;
 }
 
 std::shared_ptr<Controller> GetControllerPerSlot(int slot) {
@@ -44,7 +45,7 @@ void InputEditorWindow::DrawButton(const char* label, int32_t n64Btn, int32_t cu
         ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
     }
 
-    if (readingMode) {
+    if (readingMode && mSelectDelayTimer == 0) {
         const int32_t btn = backend->ReadRawPress();
         Context::GetInstance()->GetControlDeck()->BlockGameInput(mGameInputBlockId);
 
@@ -78,6 +79,10 @@ void InputEditorWindow::DrawButton(const char* label, int32_t n64Btn, int32_t cu
             StringHelper::Sprintf("%s##HBTNID_%d", readingMode ? "Press a Key..." : btnName.c_str(), n64Btn).c_str())) {
         *btnReading = n64Btn;
         backend->ClearRawPress();
+
+        if (!readingMode) {
+            mSelectDelayTimer = ImGui::GetIO().Framerate / 2;
+        }
     }
 
     if (disabled) {
@@ -449,6 +454,10 @@ void InputEditorWindow::UpdateElement() {
             LUS::Context::GetInstance()->GetControlDeck()->UnblockGameInput(mGameInputBlockId);
             mGameInputBlockTimer = INT32_MAX;
         }
+    }
+
+    if (mSelectDelayTimer > 0) {
+        mSelectDelayTimer--;
     }
 }
 

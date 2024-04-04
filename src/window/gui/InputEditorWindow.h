@@ -26,6 +26,7 @@ class InputEditorWindow : public GuiWindow {
   private:
     int32_t mBtnReading;
     int32_t mGameInputBlockTimer;
+    int32_t mSelectDelayTimer;
     const int32_t mGameInputBlockId = -1;
 };
 } // namespace LUS
