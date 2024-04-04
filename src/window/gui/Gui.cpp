@@ -60,6 +60,8 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARA
 
 #endif
 
+static bool bFirstToggle = true;
+
 namespace LUS {
 #define TOGGLE_BTN ImGuiKey_F1
 #define TOGGLE_PAD_BTN ImGuiKey_GamepadBack
@@ -331,6 +333,14 @@ void Gui::DrawMenu() {
     if (ImGui::IsKeyPressed(TOGGLE_BTN) || (ImGui::IsKeyPressed(TOGGLE_PAD_BTN) && CVarGetInteger("gControlNav", 0))) {
         SPDLOG_WARN("Menu toggled");
         GetMenuBar()->ToggleVisibility();
+
+        if (GetMenuBar()->IsVisible() && bFirstToggle) {
+            bFirstToggle = false;
+
+            ImGui::SetFocusID(ImGui::GetID("Main Game"), ImGui::GetCurrentWindow());
+            // TODO: How to simulate NavGamePad press?  I've tried adding a key event for it but it seems to get picked up too early
+        }
+
         if (wnd->IsFullscreen()) {
             Context::GetInstance()->GetWindow()->SetCursorVisibility(GetMenuBar() && GetMenuBar()->IsVisible());
         }
