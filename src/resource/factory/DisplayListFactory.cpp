@@ -351,7 +351,6 @@ void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::share
 
             char* filePath = (char*)malloc(fName.size() + 1);
             strcpy(filePath, fName.data());
-            free(filePath);
 
             g = GsSpVertexOtR2P1(filePath);
 
@@ -910,7 +909,6 @@ void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::share
                 strcpy(dlPath2, dlPath.c_str());
 
                 g = gsSPBranchListOTRFilePath(dlPath2);
-                free(dlPath2);
             }
         } else if (childName == "CallDisplayList") {
             std::string dlPath = (char*)child->Attribute("Path");
@@ -922,7 +920,6 @@ void DisplayListFactoryV0::ParseFileXML(tinyxml2::XMLElement* reader, std::share
                 strcpy(dlPath2, dlPath.c_str());
 
                 g = gsSPDisplayListOTRFilePath(dlPath2);
-                free(dlPath2);
             }
         } else if (childName == "ClearGeometryMode" || childName == "SetGeometryMode") {
             uint64_t clearData = 0;
