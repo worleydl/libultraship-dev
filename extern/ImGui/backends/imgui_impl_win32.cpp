@@ -912,7 +912,7 @@ static void ImGui_ImplWin32_CreateWindow(ImGuiViewport* viewport)
     viewport->PlatformHandle = viewport->PlatformHandleRaw = WinInfo::getCurrentWindow();
     vd->Hwnd = reinterpret_cast<HWND>(viewport->PlatformHandleRaw);
     vd->HwndOwned = false;
-    vd->HwndParent = nullptr; //vd->Hwnd;
+    //vd->HwndParent = nullptr; //vd->Hwnd;
 }
 
 static void ImGui_ImplWin32_DestroyWindow(ImGuiViewport* viewport)
