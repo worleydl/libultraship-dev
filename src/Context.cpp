@@ -341,6 +341,10 @@ std::string Context::GetAppBundlePath() {
 #endif
 }
 
+std::string Context::GetPathRelativeToAuxiliary(std::string path) {
+    return std::string("E:/soh/") + path;
+}
+
 std::string Context::GetAppDirectoryPath(std::string appName) {
 #if defined(__linux__) || defined(__APPLE__)
     char* fpath = std::getenv("SHIP_HOME");

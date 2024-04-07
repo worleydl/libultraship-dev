@@ -30,6 +30,7 @@ class Context {
     static std::string GetAppDirectoryPath(std::string appName = "");
     static std::string GetPathRelativeToAppDirectory(const std::string path, std::string appName = "");
     static std::string GetPathRelativeToAppBundle(const std::string path);
+    static std::string GetPathRelativeToAuxiliary(const std::string path);
     static std::string LocateFileAcrossAppDirs(const std::string path, std::string appName = "");
 
     Context(std::string name, std::string shortName, std::string configFilePath);
