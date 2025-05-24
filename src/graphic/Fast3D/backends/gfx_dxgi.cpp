@@ -55,6 +55,9 @@ using QWORD = uint64_t; // For NEXTRAWINPUTBLOCK
 
 using namespace Microsoft::WRL; // For ComPtr
 
+extern "C" __declspec(dllimport) void* uwp_GetWindowReference();
+extern "C" __declspec(dllimport) void  uwp_ProcessEvents();
+
 namespace Fast {
 
 void GfxWindowBackendDXGI::LoadDxgi() {
@@ -301,6 +304,8 @@ void GfxWindowBackendDXGI::UpdateMousePrevPos() {
 }
 
 void GfxWindowBackendDXGI::HandleRawInputBuffered() {
+// [UWP] No GetRawInputBuffered available
+#if 0
     static UINT offset = -1;
     if (offset == -1) {
         offset = sizeof(RAWINPUTHEADER);
@@ -349,6 +354,7 @@ void GfxWindowBackendDXGI::HandleRawInputBuffered() {
             }
         }
     }
+#endif
 }
 
 static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM l_param) {
@@ -450,6 +456,7 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
         case WM_MOUSEWHEEL:
             self->mMouseWheel[1] = GET_WHEEL_DELTA_WPARAM(w_param) / WHEEL_DELTA;
             break;
+#if 0
         case WM_INPUT: {
             // At this point the top most message should already be off the queue.
             // So we don't need to get it all, if mouse isn't captured.
@@ -467,6 +474,7 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             self->HandleRawInputBuffered();
             break;
         }
+#endif
         case WM_MOUSEMOVE:
             if (!self->mIsMouseHovered) {
                 self->mIsMouseHovered = true;
@@ -580,8 +588,12 @@ void GfxWindowBackendDXGI::Init(const char* game_name, const char* gfx_api_name,
         posY = 100;
     }
 
+#if 0
     h_wnd = CreateWindowW(WINCLASS_NAME, w_title, WS_OVERLAPPEDWINDOW, posX + wr.left, posY + wr.top, current_width,
                           current_height, nullptr, nullptr, nullptr, this);
+#else
+    h_wnd = static_cast<HWND>(uwp_GetWindowReference());
+#endif
 
     LoadDxgi();
 
@@ -887,6 +899,8 @@ bool GfxWindowBackendDXGI::IsFrameReady() {
 void GfxWindowBackendDXGI::SwapBuffersBegin() {
     LARGE_INTEGER t;
     mUseTimer = true;
+    uwp_ProcessEvents(); // [UWP] Needed to get any output on screen
+
     if (mUseTimer || (mTearingSupport && !mVsyncEnabled)) {
         ComPtr<ID3D11Device> mDevice;
         mSwapChainDevice.As(&mDevice);
@@ -1046,7 +1060,7 @@ void GfxWindowBackendDXGI::CreateSwapChain(IUnknown* mDevice, std::function<void
     swap_chain_desc.Height = 0;
     swap_chain_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     swap_chain_desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    swap_chain_desc.Scaling = win8 ? DXGI_SCALING_NONE : DXGI_SCALING_STRETCH;
+    swap_chain_desc.Scaling = DXGI_SCALING_STRETCH; //win8 ? DXGI_SCALING_NONE : DXGI_SCALING_STRETCH;
     swap_chain_desc.SwapEffect =
         mDXGI11_4 ? DXGI_SWAP_EFFECT_FLIP_DISCARD : // Introduced in DXGI 1.4 and Windows 10
             DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL; // Apparently flip sequential was also backported to Win 7 Platform Update
@@ -1056,8 +1070,13 @@ void GfxWindowBackendDXGI::CreateSwapChain(IUnknown* mDevice, std::function<void
     }
     swap_chain_desc.SampleDesc.Count = 1;
 
+#if 0
     ThrowIfFailed(mFactory->CreateSwapChainForHwnd(mDevice, h_wnd, &swap_chain_desc, nullptr, nullptr, &swap_chain));
     ThrowIfFailed(mFactory->MakeWindowAssociation(h_wnd, DXGI_MWA_NO_ALT_ENTER));
+#else
+    ThrowIfFailed(mFactory->CreateSwapChainForCoreWindow(mDevice, static_cast<IUnknown*>(uwp_GetWindowReference()),
+                                                         &swap_chain_desc, nullptr, &swap_chain));
+#endif
 
     ApplyMaxFrameLatency(true);
 
@@ -1081,7 +1100,23 @@ IDXGISwapChain1* GfxWindowBackendDXGI::GetSwapChain() {
 
 const char* GfxWindowBackendDXGI::GetKeyName(int scancode) {
     static char text[64];
+// [UWP] Xbox only have GetKeyNameTextW
+#if 0
     GetKeyNameTextA(scancode << 16, text, 64);
+#else
+    static wchar_t wtext[64];
+    LONG lParam = scancode << 16;
+
+    if (GetKeyNameTextW(lParam, wtext, 64) == 0) {
+        text[0] = '\0'; // clear output on failure
+        return text;
+    }
+
+    int len = WideCharToMultiByte(CP_UTF8, 0, wtext, -1, text, sizeof(text), NULL, NULL);
+    if (len == 0) {
+        text[0] = '\0';
+    }
+#endif
     return text;
 }
 

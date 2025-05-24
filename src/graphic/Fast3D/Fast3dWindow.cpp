@@ -15,6 +15,8 @@
 
 #include <fstream>
 
+extern "C" __declspec(dllimport) void uwp_GetScreenSize(int* x, int* y);
+
 namespace Fast {
 
 extern void GfxSetInstance(std::shared_ptr<Interpreter> gfx);
@@ -79,12 +81,16 @@ void Fast3dWindow::Init() {
     posX = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.PositionX", 100);
     posY = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.PositionY", 100);
 
+    // UWP TODO: Figure out why fullscreen flag is killing video out
     if (isFullscreen) {
         width = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Fullscreen.Width", gameMode ? 1280 : 1920);
         height = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Fullscreen.Height", gameMode ? 800 : 1080);
     } else {
-        width = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Width", 640);
-        height = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Height", 480);
+        int x, y;
+        uwp_GetScreenSize(&x, &y);
+
+        width = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Width", x);
+        height = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Height", y);
     }
 
     SetForceCursorVisibility(CVarGetInteger("gForceCursorVisibility", 0));
