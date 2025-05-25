@@ -55,6 +55,7 @@ using QWORD = uint64_t; // For NEXTRAWINPUTBLOCK
 
 using namespace Microsoft::WRL; // For ComPtr
 
+extern "C" __declspec(dllimport) float uwp_GetRefreshRate();
 extern "C" __declspec(dllimport) void* uwp_GetWindowReference();
 extern "C" __declspec(dllimport) void  uwp_ProcessEvents();
 
@@ -247,6 +248,7 @@ static double HzToPeriod(double Frequency) {
 }
 
 static void GetMonitorHzPeriod(HMONITOR hMonitor, double& Frequency, double& Period) {
+#if 0
     DEVMODE dm = {};
     dm.dmSize = sizeof(DEVMODE);
     if (hMonitor != NULL) {
@@ -260,9 +262,14 @@ static void GetMonitorHzPeriod(HMONITOR hMonitor, double& Frequency, double& Per
             }
         }
     }
+#else
+    Frequency = uwp_GetRefreshRate();
+    Period = HzToPeriod(Frequency);
+#endif
 }
 
 static void GetMonitorHzPeriod(std::tuple<HMONITOR, RECT, BOOL> Monitor, double& Frequency, double& Period) {
+#if 0
     HMONITOR hMonitor = get<0>(Monitor);
     DEVMODE dm = {};
     dm.dmSize = sizeof(DEVMODE);
@@ -277,6 +284,10 @@ static void GetMonitorHzPeriod(std::tuple<HMONITOR, RECT, BOOL> Monitor, double&
             }
         }
     }
+#else
+    Frequency = uwp_GetRefreshRate();
+    Period = HzToPeriod(Frequency);
+#endif
 }
 
 void GfxWindowBackendDXGI::Close() {
