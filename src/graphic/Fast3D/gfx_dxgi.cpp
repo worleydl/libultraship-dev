@@ -54,6 +54,12 @@ using QWORD = uint64_t; // For NEXTRAWINPUTBLOCK
 
 using namespace Microsoft::WRL; // For ComPtr
 
+#ifdef _UWP
+extern "C" __declspec(dllimport) float uwp_GetRefreshRate();
+extern "C" __declspec(dllimport) void* uwp_GetWindowReference();
+extern "C" __declspec(dllimport) void  uwp_ProcessEvents();
+#endif
+
 static struct {
     HWND h_wnd;
 
@@ -302,6 +308,7 @@ double HzToPeriod(double Frequency) {
 }
 
 void GetMonitorHzPeriod(HMONITOR hMonitor, double& Frequency, double& Period) {
+#ifndef _UWP
     DEVMODE dm = {};
     dm.dmSize = sizeof(DEVMODE);
     if (hMonitor != NULL) {
@@ -315,9 +322,14 @@ void GetMonitorHzPeriod(HMONITOR hMonitor, double& Frequency, double& Period) {
             }
         }
     }
+#else
+    Frequency = uwp_GetRefreshRate();
+    Period = HzToPeriod(Frequency);
+#endif
 }
 
 void GetMonitorHzPeriod(std::tuple<HMONITOR, RECT, BOOL> Monitor, double& Frequency, double& Period) {
+#ifndef _UWP
     HMONITOR hMonitor = get<0>(Monitor);
     DEVMODE dm = {};
     dm.dmSize = sizeof(DEVMODE);
@@ -332,6 +344,10 @@ void GetMonitorHzPeriod(std::tuple<HMONITOR, RECT, BOOL> Monitor, double& Freque
             }
         }
     }
+#else
+    Frequency = uwp_GetRefreshRate();
+    Period = HzToPeriod(Frequency);
+#endif
 }
 
 static void gfx_dxgi_close() {
@@ -359,6 +375,7 @@ static void update_mouse_prev_pos() {
 }
 
 void gfx_dxgi_handle_raw_input_buffered() {
+#ifndef _UWP
     static UINT offset = -1;
     if (offset == -1) {
         offset = sizeof(RAWINPUTHEADER);
@@ -407,6 +424,7 @@ void gfx_dxgi_handle_raw_input_buffered() {
             }
         }
     }
+#endif
 }
 
 static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_param, LPARAM l_param) {
@@ -500,6 +518,7 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
         case WM_MOUSEWHEEL:
             dxgi.mouse_wheel[1] = GET_WHEEL_DELTA_WPARAM(w_param) / WHEEL_DELTA;
             break;
+#ifndef _UWP
         case WM_INPUT: {
             // At this point the top most message should already be off the queue.
             // So we don't need to get it all, if mouse isn't captured.
@@ -517,6 +536,7 @@ static LRESULT CALLBACK gfx_dxgi_wnd_proc(HWND h_wnd, UINT message, WPARAM w_par
             gfx_dxgi_handle_raw_input_buffered();
             break;
         }
+#endif
         case WM_MOUSEMOVE:
             if (!dxgi.is_mouse_hovered) {
                 dxgi.is_mouse_hovered = true;
@@ -629,8 +649,12 @@ void gfx_dxgi_init(const char* game_name, const char* gfx_api_name, bool start_i
         dxgi.posY = 100;
     }
 
+#ifndef _UWP
     dxgi.h_wnd = CreateWindowW(WINCLASS_NAME, w_title, WS_OVERLAPPEDWINDOW, dxgi.posX + wr.left, dxgi.posY + wr.top,
                                dxgi.current_width, dxgi.current_height, nullptr, nullptr, nullptr, nullptr);
+#else
+    dxgi.h_wnd = static_cast<HWND>(uwp_GetWindowReference());
+#endif
 
     load_dxgi_library();
 
@@ -938,6 +962,8 @@ static bool gfx_dxgi_is_frame_ready() {
 static void gfx_dxgi_swap_buffers_begin() {
     LARGE_INTEGER t;
     dxgi.use_timer = true;
+    uwp_ProcessEvents(); // Needed for video on xbox uwp
+
     if (dxgi.use_timer || (dxgi.tearing_support && !dxgi.is_vsync_enabled)) {
         ComPtr<ID3D11Device> device;
         dxgi.swap_chain_device.As(&device);
@@ -1097,7 +1123,11 @@ void gfx_dxgi_create_swap_chain(IUnknown* device, std::function<void()>&& before
     swap_chain_desc.Height = 0;
     swap_chain_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     swap_chain_desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+#ifndef _UWP
     swap_chain_desc.Scaling = win8 ? DXGI_SCALING_NONE : DXGI_SCALING_STRETCH;
+#else
+    swap_chain_desc.Scaling = DXGI_SCALING_STRETCH;
+#endif
     swap_chain_desc.SwapEffect =
         dxgi.dxgi1_4 ? DXGI_SWAP_EFFECT_FLIP_DISCARD : // Introduced in DXGI 1.4 and Windows 10
             DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL; // Apparently flip sequential was also backported to Win 7 Platform Update
@@ -1107,9 +1137,14 @@ void gfx_dxgi_create_swap_chain(IUnknown* device, std::function<void()>&& before
     }
     swap_chain_desc.SampleDesc.Count = 1;
 
+#ifndef _UWP
     ThrowIfFailed(
         dxgi.factory->CreateSwapChainForHwnd(device, dxgi.h_wnd, &swap_chain_desc, nullptr, nullptr, &dxgi.swap_chain));
     ThrowIfFailed(dxgi.factory->MakeWindowAssociation(dxgi.h_wnd, DXGI_MWA_NO_ALT_ENTER));
+#else
+    ThrowIfFailed(dxgi.factory->CreateSwapChainForCoreWindow(device, static_cast<IUnknown*>(uwp_GetWindowReference()),
+        &swap_chain_desc, nullptr, &dxgi.swap_chain));
+#endif
 
     apply_maximum_frame_latency(true);
 
@@ -1149,7 +1184,22 @@ void ThrowIfFailed(HRESULT res, HWND h_wnd, const char* message) {
 
 const char* gfx_dxgi_get_key_name(int scancode) {
     static char text[64];
+#ifndef _UWP
     GetKeyNameTextA(scancode << 16, text, 64);
+#else
+    static wchar_t wtext[64];
+    LONG lParam = scancode << 16;
+
+    if (GetKeyNameTextW(lParam, wtext, 64) == 0) {
+        text[0] = '\0'; // clear output on failure
+        return text;
+    }
+
+    int len = WideCharToMultiByte(CP_UTF8, 0, wtext, -1, text, sizeof(text), NULL, NULL);
+    if (len == 0) {
+        text[0] = '\0';
+    }
+#endif
     return text;
 }
 

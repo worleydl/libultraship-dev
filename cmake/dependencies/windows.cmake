@@ -6,7 +6,8 @@ target_sources(ImGui
 )
 
 find_package(SDL2 CONFIG REQUIRED)
-target_link_libraries(ImGui PUBLIC SDL2::SDL2 SDL2::SDL2main)
+#target_link_libraries(ImGui PUBLIC SDL2::SDL2 SDL2::SDL2main)
+target_link_libraries(ImGui PUBLIC SDL2)
 
 find_package(GLEW REQUIRED)
 target_link_libraries(ImGui PUBLIC opengl32 GLEW::GLEW)

@@ -134,7 +134,11 @@ bool Context::InitLogging() {
         sinks.push_back(systemConsoleSink);
 #endif
 
+#ifndef _UWP
         auto logPath = GetPathRelativeToAppDirectory(("logs/" + GetName() + ".log"));
+#else
+        auto logPath = GetPathRelativeToAuxiliary(("logs/" + GetName() + ".log"));
+#endif
         auto fileSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(logPath, 1024 * 1024 * 10, 10);
 #ifdef _DEBUG
         fileSink->set_level(spdlog::level::trace);
@@ -463,6 +467,10 @@ std::string Context::GetPathRelativeToAppBundle(const std::string path) {
     return GetAppBundlePath() + "/" + path;
 }
 
+std::string Context::GetPathRelativeToAuxiliary(const std::string path) {
+    return std::string("E:/soh/") + path;
+}
+
 std::string Context::GetPathRelativeToAppDirectory(const std::string path, std::string appName) {
     return GetAppDirectoryPath(appName) + "/" + path;
 }
@@ -480,6 +488,12 @@ std::string Context::LocateFileAcrossAppDirs(const std::string path, std::string
     if (std::filesystem::exists(fpath)) {
         return fpath;
     }
+
+    fpath = GetPathRelativeToAuxiliary(path);
+    if (std::filesystem::exists(fpath)) {
+        return fpath;
+    }
+
     // current dir
     return "./" + std::string(path);
 }
