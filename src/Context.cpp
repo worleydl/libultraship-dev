@@ -141,7 +141,12 @@ bool Context::InitLogging() {
         sinks.push_back(systemConsoleSink);
 #endif
 
+#ifndef _UWP
         auto logPath = GetPathRelativeToAppDirectory(("logs/" + GetName() + ".log"));
+#else
+        auto logPath = GetPathRelativeToAuxiliary(("logs/" + GetName() + ".log"));
+#endif
+
         auto fileSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(logPath, 1024 * 1024 * 10, 10);
 #ifdef _DEBUG
         fileSink->set_level(spdlog::level::trace);
@@ -210,7 +215,11 @@ bool Context::InitResourceManager(const std::vector<std::string>& archivePaths,
     }
 
     mMainPath = GetConfig()->GetString("Game.Main Archive", GetAppDirectoryPath());
+#ifndef _UWP
     mPatchesPath = GetConfig()->GetString("Game.Patches Archive", GetAppDirectoryPath() + "/mods");
+#else
+    mPatchesPath = GetConfig()->GetString("Game.Patches Archive", GetPathRelativeToAuxiliary("/mods"));
+#endif
     if (archivePaths.empty()) {
         std::vector<std::string> paths = std::vector<std::string>();
         paths.push_back(mMainPath);
@@ -508,6 +517,10 @@ std::string Context::GetPathRelativeToAppDirectory(const std::string path, std::
     return GetAppDirectoryPath(appName) + "/" + path;
 }
 
+std::string Context::GetPathRelativeToAuxiliary(const std::string path) {
+    return std::string("E:/2ship/") + path;
+}
+
 std::string Context::LocateFileAcrossAppDirs(const std::string path, std::string appName) {
     std::string fpath;
 
@@ -518,6 +531,11 @@ std::string Context::LocateFileAcrossAppDirs(const std::string path, std::string
     }
     // app install dir
     fpath = GetPathRelativeToAppBundle(path);
+    if (std::filesystem::exists(fpath)) {
+        return fpath;
+    }
+    // auxiliary
+    fpath = GetPathRelativeToAuxiliary(path);
     if (std::filesystem::exists(fpath)) {
         return fpath;
     }

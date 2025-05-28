@@ -15,6 +15,11 @@
 
 #include <fstream>
 
+#ifdef _UWP
+extern "C" __declspec(dllimport) float uwp_GetRefreshRate();
+extern "C" __declspec(dllimport) void  uwp_GetScreenSize(int* x, int* y);
+#endif
+
 namespace Fast {
 
 extern void GfxSetInstance(std::shared_ptr<Interpreter> gfx);
@@ -79,6 +84,7 @@ void Fast3dWindow::Init() {
     posX = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.PositionX", 100);
     posY = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.PositionY", 100);
 
+#ifndef _UWP
     if (isFullscreen) {
         width = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Fullscreen.Width", gameMode ? 1280 : 1920);
         height = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Fullscreen.Height", gameMode ? 800 : 1080);
@@ -86,6 +92,12 @@ void Fast3dWindow::Init() {
         width = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Width", 640);
         height = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Height", 480);
     }
+#else
+    int x, y;
+    uwp_GetScreenSize(&x, &y);
+    width = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Width", x);
+    height = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Height", y);
+#endif
 
     SetForceCursorVisibility(CVarGetInteger("gForceCursorVisibility", 0));
 
@@ -269,9 +281,13 @@ bool Fast3dWindow::IsMouseCaptured() {
 }
 
 uint32_t Fast3dWindow::GetCurrentRefreshRate() {
+#ifndef _UWP
     uint32_t refreshRate;
     mWindowManagerApi->GetActiveWindowRefreshRate(&refreshRate);
     return refreshRate;
+#else
+    return std::ceil(uwp_GetRefreshRate());
+#endif
 }
 
 bool Fast3dWindow::SupportsWindowedFullscreen() {

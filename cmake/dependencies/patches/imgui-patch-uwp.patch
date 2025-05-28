@@ -1,0 +1,87 @@
+ backends/imgui_impl_sdl2.cpp  |  3 ---
+ backends/imgui_impl_win32.cpp | 10 ++++++++++
+ imconfig.h                    |  5 ++++-
+ imgui.cpp                     |  3 ++-
+ 4 files changed, 16 insertions(+), 5 deletions(-)
+
+diff --git a/backends/imgui_impl_sdl2.cpp b/backends/imgui_impl_sdl2.cpp
+index 23f12796..a7fef045 100644
+--- a/backends/imgui_impl_sdl2.cpp
++++ b/backends/imgui_impl_sdl2.cpp
+@@ -816,9 +816,6 @@ static void ImGui_ImplSDL2_UpdateGamepads()
+         bd->WantUpdateGamepadsList = false;
+     }
+ 
+-    // FIXME: Technically feeding gamepad shouldn't depend on this now that they are regular inputs.
+-    if ((io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) == 0)
+-        return;
+     io.BackendFlags &= ~ImGuiBackendFlags_HasGamepad;
+     if (bd->Gamepads.Size == 0)
+         return;
+diff --git a/backends/imgui_impl_win32.cpp b/backends/imgui_impl_win32.cpp
+index 5ef09bd4..83eb75f2 100644
+--- a/backends/imgui_impl_win32.cpp
++++ b/backends/imgui_impl_win32.cpp
+@@ -90,6 +90,10 @@
+ #include <tchar.h>
+ #include <dwmapi.h>
+ 
++#ifdef _UWP
++extern "C" __declspec(dllimport) void uwp_GetScreenSize(int* x, int* y);
++#endif
++
+ // Using XInput for gamepad (will load DLL dynamically)
+ #ifndef IMGUI_IMPL_WIN32_DISABLE_GAMEPAD
+ #include <xinput.h>
+@@ -483,11 +487,17 @@ void    ImGui_ImplWin32_NewFrame()
+     ImGuiPlatformIO& platform_io = ImGui::GetPlatformIO();
+ 
+     // Setup display size (every frame to accommodate for window resizing)
++#ifndef _UWP
+     RECT rect = { 0, 0, 0, 0 };
+     ::GetClientRect(bd->hWnd, &rect);
+     io.DisplaySize = ImVec2((float)(rect.right - rect.left), (float)(rect.bottom - rect.top));
+     if (bd->WantUpdateMonitors)
+         ImGui_ImplWin32_UpdateMonitors();
++#else
++    int x, y;
++    uwp_GetScreenSize(&x, &y);
++    io.DisplaySize = ImVec2((float) x, (float) y);
++#endif
+ 
+     // Setup time step
+     INT64 current_time = 0;
+diff --git a/imconfig.h b/imconfig.h
+index 8f8bc3b9..cc578e3f 100644
+--- a/imconfig.h
++++ b/imconfig.h
+@@ -111,7 +111,7 @@
+         operator MyVec4() const { return MyVec4(x,y,z,w); }
+ */
+ //---- ...Or use Dear ImGui's own very basic math operators.
+-//#define IMGUI_DEFINE_MATH_OPERATORS
++#define IMGUI_DEFINE_MATH_OPERATORS
+ 
+ //---- Use 32-bit vertex indices (default is 16-bit) is one way to allow large meshes with more than 64K vertices.
+ // Your renderer backend will need to support it (most example renderer backends support both 16/32-bit indices).
+@@ -140,3 +140,6 @@ namespace ImGui
+     void MyFunction(const char* name, MyMatrix44* mtx);
+ }
+ */
++
++// handle https://github.com/ocornut/imgui/issues/1641 the old way
++#define ImTextureID void*
+diff --git a/imgui.cpp b/imgui.cpp
+index c7b84cc6..b30bc7a7 100644
+--- a/imgui.cpp
++++ b/imgui.cpp
+@@ -11088,7 +11088,8 @@ static void ImGui::ErrorCheckNewFrameSanityChecks()
+             IM_ASSERT(g.PlatformIO.Platform_SetWindowPos  != NULL && "Platform init didn't install handlers?");
+             IM_ASSERT(g.PlatformIO.Platform_GetWindowSize != NULL && "Platform init didn't install handlers?");
+             IM_ASSERT(g.PlatformIO.Platform_SetWindowSize != NULL && "Platform init didn't install handlers?");
+-            IM_ASSERT(g.PlatformIO.Monitors.Size > 0 && "Platform init didn't setup Monitors list?");
++	    // [UWP] Monitor state reworked
++            //IM_ASSERT(g.PlatformIO.Monitors.Size > 0 && "Platform init didn't setup Monitors list?");
+             IM_ASSERT((g.Viewports[0]->PlatformUserData != NULL || g.Viewports[0]->PlatformHandle != NULL) && "Platform init didn't setup main viewport.");
+             if (g.IO.ConfigDockingTransparentPayload && (g.IO.ConfigFlags & ImGuiConfigFlags_DockingEnable))
+                 IM_ASSERT(g.PlatformIO.Platform_SetWindowAlpha != NULL && "Platform_SetWindowAlpha handler is required to use io.ConfigDockingTransparent!");
