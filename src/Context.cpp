@@ -141,7 +141,12 @@ bool Context::InitLogging() {
         sinks.push_back(systemConsoleSink);
 #endif
 
+#ifndef __UWP__
         auto logPath = GetPathRelativeToAppDirectory(("logs/" + GetName() + ".log"));
+#else
+        const char* prefPath = SDL_GetPrefPath("", ""); 
+        auto logPath = (std::string(prefPath)) + GetName() + ".log"; 
+#endif
         auto fileSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(logPath, 1024 * 1024 * 10, 10);
 #ifdef _DEBUG
         fileSink->set_level(spdlog::level::trace);

@@ -4182,6 +4182,12 @@ void Interpreter::Init(class GfxWindowBackend* wapi, class GfxRenderingAPI* rapi
     mCurDimensions.width = width;
     mCurDimensions.height = height;
 
+#ifdef __UWP__
+    // Missing init for these in GL for some reason
+    mGameWindowViewport.width = width;
+    mGameWindowViewport.height = height;
+#endif
+
     mGameFb = mRapi->CreateFramebuffer();
     mGameFbMsaaResolved = mRapi->CreateFramebuffer();
 

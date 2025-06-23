@@ -1,0 +1,131 @@
+ backends/imgui_impl_metal.mm  | 8 --------
+ backends/imgui_impl_sdl2.cpp  | 3 ---
+ backends/imgui_impl_win32.cpp | 8 ++++++++
+ docs/CHANGELOG.txt            | 1 -
+ imconfig.h                    | 5 ++++-
+ imgui.cpp                     | 3 ++-
+ 6 files changed, 14 insertions(+), 14 deletions(-)
+
+diff --git a/backends/imgui_impl_metal.mm b/backends/imgui_impl_metal.mm
+index 9ab4a342..388c4f39 100644
+--- a/backends/imgui_impl_metal.mm
++++ b/backends/imgui_impl_metal.mm
+@@ -18,7 +18,6 @@
+ // (minor and older changes stripped away, please see git history for details)
+ //  2025-XX-XX: Metal: Added support for multiple windows via the ImGuiPlatformIO interface.
+ //  2025-02-03: Metal: Crash fix. (#8367)
+-//  2025-01-08: Metal: Fixed memory leaks when using metal-cpp (#8276, #8166) or when using multiple contexts (#7419).
+ //  2022-08-23: Metal: Update deprecated property 'sampleCount'->'rasterSampleCount'.
+ //  2022-07-05: Metal: Add dispatch synchronization.
+ //  2022-06-30: Metal: Use __bridge for ARC based systems.
+@@ -171,11 +170,7 @@ void ImGui_ImplMetal_NewFrame(MTLRenderPassDescriptor* renderPassDescriptor)
+ {
+     ImGui_ImplMetal_Data* bd = ImGui_ImplMetal_GetBackendData();
+     IM_ASSERT(bd != nil && "Context or backend not initialized! Did you call ImGui_ImplMetal_Init()?");
+-#ifdef IMGUI_IMPL_METAL_CPP
+-    bd->SharedMetalContext.framebufferDescriptor = [[[FramebufferDescriptor alloc] initWithRenderPassDescriptor:renderPassDescriptor]autorelease];
+-#else
+     bd->SharedMetalContext.framebufferDescriptor = [[FramebufferDescriptor alloc] initWithRenderPassDescriptor:renderPassDescriptor];
+-#endif
+     if (bd->SharedMetalContext.depthStencilState == nil)
+         ImGui_ImplMetal_CreateDeviceObjects(bd->SharedMetalContext.device);
+ }
+@@ -383,9 +378,6 @@ bool ImGui_ImplMetal_CreateDeviceObjects(id<MTLDevice> device)
+     depthStencilDescriptor.depthCompareFunction = MTLCompareFunctionAlways;
+     bd->SharedMetalContext.depthStencilState = [device newDepthStencilStateWithDescriptor:depthStencilDescriptor];
+     ImGui_ImplMetal_CreateDeviceObjectsForPlatformWindows();
+-#ifdef IMGUI_IMPL_METAL_CPP
+-    [depthStencilDescriptor release];
+-#endif
+     ImGui_ImplMetal_CreateFontsTexture(device);
+     return true;
+ }
+diff --git a/backends/imgui_impl_sdl2.cpp b/backends/imgui_impl_sdl2.cpp
+index f3a31c5c..2e6a1ad9 100644
+--- a/backends/imgui_impl_sdl2.cpp
++++ b/backends/imgui_impl_sdl2.cpp
+@@ -845,9 +845,6 @@ static void ImGui_ImplSDL2_UpdateGamepads()
+         bd->WantUpdateGamepadsList = false;
+     }
+ 
+-    // FIXME: Technically feeding gamepad shouldn't depend on this now that they are regular inputs.
+-    if ((io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) == 0)
+-        return;
+     io.BackendFlags &= ~ImGuiBackendFlags_HasGamepad;
+     if (bd->Gamepads.Size == 0)
+         return;
+diff --git a/backends/imgui_impl_win32.cpp b/backends/imgui_impl_win32.cpp
+index f5939e85..0dd398ce 100644
+--- a/backends/imgui_impl_win32.cpp
++++ b/backends/imgui_impl_win32.cpp
+@@ -116,6 +116,8 @@ static void ImGui_ImplWin32_InitMultiViewportSupport(bool platform_has_own_dc);
+ static void ImGui_ImplWin32_ShutdownMultiViewportSupport();
+ static void ImGui_ImplWin32_UpdateMonitors();
+ 
++extern "C" __declspec(dllimport) void uwp_GetScreenSize(int* x, int* y);
++
+ struct ImGui_ImplWin32_Data
+ {
+     HWND                        hWnd;
+@@ -488,9 +490,15 @@ void    ImGui_ImplWin32_NewFrame()
+     ImGuiPlatformIO& platform_io = ImGui::GetPlatformIO();
+ 
+     // Setup display size (every frame to accommodate for window resizing)
++#if 0
+     RECT rect = { 0, 0, 0, 0 };
+     ::GetClientRect(bd->hWnd, &rect);
+     io.DisplaySize = ImVec2((float)(rect.right - rect.left), (float)(rect.bottom - rect.top));
++#else
++    int x, y;
++    uwp_GetScreenSize(&x, &y);
++    io.DisplaySize = ImVec2((float)x, (float)y);
++#endif
+     if (bd->WantUpdateMonitors)
+         ImGui_ImplWin32_UpdateMonitors();
+ 
+diff --git a/docs/CHANGELOG.txt b/docs/CHANGELOG.txt
+index 6c4f19cf..e4a4cbf9 100644
+--- a/docs/CHANGELOG.txt
++++ b/docs/CHANGELOG.txt
+@@ -355,7 +355,6 @@ Other changes:
+   though it is currently not doing anything particular. (#8163, #7998, #7988)
+ - Backends: Allegro5: Avoid calling al_set_mouse_cursor() repeatedly since it appears
+   to leak on on X11 (#8256). [@Helodity]
+-- Backends: Metal: Fixed leaks when using metal-cpp. (#8276, #8166) [@selimsandal]
+ - Backends: Metal: Fixed resource leak when using multiple contexts. (#7419) [@anszom]
+ - Backends: Vulkan: Fixed setting VkSwapchainCreateInfoKHR::preTransform for
+   platforms not supporting VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR. (#8222) [@Zer0xFF]
+diff --git a/imconfig.h b/imconfig.h
+index a1e29e84..ee64116f 100644
+--- a/imconfig.h
++++ b/imconfig.h
+@@ -110,7 +110,7 @@
+         operator MyVec4() const { return MyVec4(x,y,z,w); }
+ */
+ //---- ...Or use Dear ImGui's own very basic math operators.
+-//#define IMGUI_DEFINE_MATH_OPERATORS
++#define IMGUI_DEFINE_MATH_OPERATORS
+ 
+ //---- Use 32-bit vertex indices (default is 16-bit) is one way to allow large meshes with more than 64K vertices.
+ // Your renderer backend will need to support it (most example renderer backends support both 16/32-bit indices).
+@@ -139,3 +139,6 @@ namespace ImGui
+     void MyFunction(const char* name, MyMatrix44* mtx);
+ }
+ */
++
++// handle https://github.com/ocornut/imgui/issues/1641 the old way
++#define ImTextureID void*
+diff --git a/imgui.cpp b/imgui.cpp
+index 573efe24..2c243a78 100644
+--- a/imgui.cpp
++++ b/imgui.cpp
+@@ -10903,7 +10903,8 @@ static void ImGui::ErrorCheckNewFrameSanityChecks()
+             IM_ASSERT(g.PlatformIO.Platform_SetWindowPos  != NULL && "Platform init didn't install handlers?");
+             IM_ASSERT(g.PlatformIO.Platform_GetWindowSize != NULL && "Platform init didn't install handlers?");
+             IM_ASSERT(g.PlatformIO.Platform_SetWindowSize != NULL && "Platform init didn't install handlers?");
+-            IM_ASSERT(g.PlatformIO.Monitors.Size > 0 && "Platform init didn't setup Monitors list?");
++            // DLW: Monitor init doesn't work correctly, we get size from libuwp
++            //IM_ASSERT(g.PlatformIO.Monitors.Size > 0 && "Platform init didn't setup Monitors list?");
+             IM_ASSERT((g.Viewports[0]->PlatformUserData != NULL || g.Viewports[0]->PlatformHandle != NULL) && "Platform init didn't setup main viewport.");
+             if (g.IO.ConfigDockingTransparentPayload && (g.IO.ConfigFlags & ImGuiConfigFlags_DockingEnable))
+                 IM_ASSERT(g.PlatformIO.Platform_SetWindowAlpha != NULL && "Platform_SetWindowAlpha handler is required to use io.ConfigDockingTransparent!");

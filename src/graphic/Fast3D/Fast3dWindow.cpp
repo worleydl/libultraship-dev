@@ -15,6 +15,10 @@
 
 #include <fstream>
 
+#ifdef __UWP__
+extern "C" __declspec(dllimport) void uwp_GetScreenSize(int* x, int* y);
+#endif
+
 namespace Fast {
 
 extern void GfxSetInstance(std::shared_ptr<Interpreter> gfx);
@@ -79,6 +83,7 @@ void Fast3dWindow::Init() {
     posX = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.PositionX", 100);
     posY = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.PositionY", 100);
 
+#ifndef __UWP__
     if (isFullscreen) {
         width = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Fullscreen.Width", gameMode ? 1280 : 1920);
         height = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Fullscreen.Height", gameMode ? 800 : 1080);
@@ -86,6 +91,12 @@ void Fast3dWindow::Init() {
         width = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Width", 640);
         height = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Height", 480);
     }
+#else
+    int x, y;
+    uwp_GetScreenSize(&x, &y);
+    width = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Width", x);
+    height = Ship::Context::GetInstance()->GetConfig()->GetInt("Window.Height", y);
+#endif
 
     SetForceCursorVisibility(CVarGetInteger("gForceCursorVisibility", 0));
 
