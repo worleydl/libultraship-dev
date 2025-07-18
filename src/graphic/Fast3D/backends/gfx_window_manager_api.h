@@ -47,5 +47,6 @@ class GfxWindowBackend {
     bool mFullScreen;
     bool mIsRunning = true;
     bool mVsyncEnabled = true;
+    bool mMatchRefresh = true;
 };
 } // namespace Fast

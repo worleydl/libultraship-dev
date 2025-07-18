@@ -903,6 +903,7 @@ bool GfxWindowBackendDXGI::IsFrameReady() {
     // mLengthInVsyncFrames is used as present interval. Present interval >1 (aka fractional V-Sync)
     // breaks VRR and introduces even more input lag than capping via normal V-Sync does.
     // Get the present interval the user wants instead (V-Sync toggle).
+    mMatchRefresh = Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_MATCH_REFRESH, 1);
     mVsyncEnabled = Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_VSYNC_ENABLED, 1);
     mLengthInVsyncFrames = mVsyncEnabled ? 1 : 0;
     return true;
@@ -970,6 +971,9 @@ void GfxWindowBackendDXGI::SwapBuffersEnd() {
     QueryPerformanceCounter(&t0);
     QueryPerformanceCounter(&t1);
 
+    if (mMatchRefresh && mVsyncEnabled)
+        goto timing_bypass;
+
     if (mAppliedMaxFrameLatency > mMaxFrameLatency) {
         // If latency is decreased, you have to wait the same amout of times as the old latency was set to
         int times_to_wait = mAppliedMaxFrameLatency;
@@ -996,6 +1000,8 @@ void GfxWindowBackendDXGI::SwapBuffersEnd() {
         }
         // else TODO: maybe sleep until some estimated time the frame will be shown to reduce lag
     }
+
+timing_bypass:
 
     DXGI_FRAME_STATISTICS stats;
     swap_chain->GetFrameStatistics(&stats);

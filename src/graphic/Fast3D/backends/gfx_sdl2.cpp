@@ -682,7 +682,11 @@ void GfxWindowBackendSDL2::SwapBuffersBegin() {
         SDL_RenderSetVSync(mRenderer, mVsyncEnabled ? 1 : 0);
     }
 
-    SyncFramerateWithTime();
+    if (!(mMatchRefresh && mVsyncEnabled))
+        SyncFramerateWithTime();
+
+    mMatchRefresh = Ship::Context::GetInstance()->GetConsoleVariables()->GetInteger(CVAR_MATCH_REFRESH, 1);
+
     SDL_GL_SwapWindow(mWnd);
 }
 
