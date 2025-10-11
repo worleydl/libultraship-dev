@@ -504,7 +504,16 @@ std::string Context::GetPathRelativeToAppBundle(const std::string path) {
 }
 
 std::string Context::GetPathRelativeToAuxiliary(const std::string path) {
-    return std::string("E:/soh/") + path;
+    const std::string AUX_PATH = "E:/soh/";
+
+    if (std::filesystem::exists(AUX_PATH) && std::filesystem::is_directory(AUX_PATH)) {
+        return AUX_PATH + path;
+    } else {
+        char* prefpath = SDL_GetPrefPath("", "soh");
+        std::string fallback = std::string(prefpath) + "/" + path;
+        SDL_free(prefpath);
+        return fallback;
+    }
 }
 
 std::string Context::GetPathRelativeToAppDirectory(const std::string path, std::string appName) {
