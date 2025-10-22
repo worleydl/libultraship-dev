@@ -142,11 +142,8 @@ bool Context::InitLogging() {
         sinks.push_back(systemConsoleSink);
 #endif
 
-#ifndef _UWP
+	// UWP TODO: Issue with folder creation in local state, would be nice to get outside app folder
         auto logPath = GetPathRelativeToAppDirectory(("logs/" + GetName() + ".log"));
-#else
-        auto logPath = GetPathRelativeToAuxiliary(("logs/" + GetName() + ".log"));
-#endif
         auto fileSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(logPath, 1024 * 1024 * 10, 10);
 #ifdef _DEBUG
         mLogger = std::make_shared<spdlog::logger>("multi_sink", sinks.begin(), sinks.end());
