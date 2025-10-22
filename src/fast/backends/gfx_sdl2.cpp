@@ -706,7 +706,7 @@ void GfxWindowBackendSDL2::SwapBuffersBegin() {
         previous_time = qpc_to_100ns(SDL_GetPerformanceCounter());
     }
 
-    SDL_GL_SwapWindow(wnd);
+    SDL_GL_SwapWindow(mWnd);
 }
 
 void GfxWindowBackendSDL2::SwapBuffersEnd() {
